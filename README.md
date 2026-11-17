@@ -1,3 +1,9 @@
+---
+title: Waste Zero
+sdk: docker
+app_port: 7860
+---
+
 # WasteZero
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
