@@ -18,4 +18,4 @@ COPY --from=web /web/dist/frontend/browser ./static
 COPY server.py ./
 RUN chown -R user:user /app
 USER user
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-7860}"]
