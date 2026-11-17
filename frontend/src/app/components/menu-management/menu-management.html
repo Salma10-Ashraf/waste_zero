@@ -1,207 +1,152 @@
-
-<div class="menu-page">
+<div class="page">
   <header class="page-header">
     <div>
-      <span class="eyebrow">WASTE ZERO / INVENTORY</span>
       <h1>Menu Management</h1>
-      <p>Manage your restaurant menu, prices and categories.</p>
+      <p>Manage your menu items, prices and categories.</p>
     </div>
-
-    <button class="refresh-btn" type="button" (click)="loadMenu()">
-      ↻ Refresh Menu
-    </button>
+    <button class="btn btn-ghost" type="button" (click)="loadMenu()">Refresh menu</button>
   </header>
 
-  <div class="stats-grid">
-    <article class="stat-card">
-      <span>Total Menu Items</span>
+  <section class="stats-grid">
+    <article class="stat">
+      <span>Total menu items</span>
       <strong>{{ menuItems.length }}</strong>
-      <small>Registered items</small>
     </article>
-
-    <article class="stat-card">
+    <article class="stat">
       <span>Categories</span>
       <strong>{{ getCategoriesCount() }}</strong>
-      <small>Different categories</small>
     </article>
-
-    <article class="stat-card">
-      <span>Average Price</span>
-      <strong>{{ getAveragePrice() | number:'1.2-2' }} EGP</strong>
-      <small>Across all menu items</small>
+    <article class="stat">
+      <span>Average price</span>
+      <strong>{{ getAveragePrice() | number:'1.2-2' }} <small>EGP</small></strong>
     </article>
-  </div>
+  </section>
 
   <div class="content-grid">
-    <section class="panel form-panel">
-      <div class="panel-heading">
+    <section class="panel">
+      <div class="panel-head">
         <div>
-          <span class="section-label">MENU EDITOR</span>
-          <h2>{{ editingId === null ? 'Add New Item' : 'Edit Menu Item' }}</h2>
+          <h3>{{ editingId === null ? 'Add new item' : 'Edit menu item' }}</h3>
+          <p>{{ editingId === null ? 'Create an item to use in forecasts.' : 'Update the details and save.' }}</p>
         </div>
-
-        <span class="heading-icon">＋</span>
       </div>
 
-      <form (ngSubmit)="saveItem()" #menuForm="ngForm">
-        <label for="itemName">Item Name</label>
-        <input
-          id="itemName"
-          name="name"
-          type="text"
-          [(ngModel)]="form.name"
-          placeholder="e.g. Mango Juice"
-          required
-          minlength="2"
-          maxlength="100"
-        />
-
-        <label for="itemCategory">Category</label>
-        <input
-          id="itemCategory"
-          name="category"
-          type="text"
-          [(ngModel)]="form.category"
-          placeholder="e.g. Drinks"
-          required
-          minlength="2"
-          maxlength="50"
-        />
-
-        <label for="itemPrice">Price (EGP)</label>
-        <input
-          id="itemPrice"
-          name="price"
-          type="number"
-          [(ngModel)]="form.price_egp"
-          placeholder="0.00"
-          min="0.01"
-          step="0.01"
-          required
-        />
-
-        <div *ngIf="errorMessage" class="message error-message">
-          {{ errorMessage }}
+      <form class="item-form" (ngSubmit)="saveItem()" #menuForm="ngForm">
+        <div class="field">
+          <label for="itemName">Item name</label>
+          <input
+            id="itemName"
+            name="name"
+            type="text"
+            [(ngModel)]="form.name"
+            placeholder="e.g. Mango Juice"
+            required
+            minlength="2"
+            maxlength="100" />
         </div>
 
-        <div *ngIf="successMessage" class="message success-message">
-          {{ successMessage }}
+        <div class="field">
+          <label for="itemCategory">Category</label>
+          <input
+            id="itemCategory"
+            name="category"
+            type="text"
+            [(ngModel)]="form.category"
+            placeholder="e.g. Drinks"
+            required
+            minlength="2"
+            maxlength="50" />
         </div>
 
-        <button
-          class="primary-btn"
-          type="submit"
-          [disabled]="saving || menuForm.invalid"
-        >
-          {{ saving ? 'Saving...' : (editingId === null ? '+ Add Menu Item' : 'Save Changes') }}
+        <div class="field">
+          <label for="itemPrice">Price</label>
+          <div class="input-suffix">
+            <input
+              id="itemPrice"
+              name="price"
+              type="number"
+              [(ngModel)]="form.price_egp"
+              placeholder="0.00"
+              min="0.01"
+              step="0.01"
+              required />
+            <span>EGP</span>
+          </div>
+        </div>
+
+        <div *ngIf="errorMessage" class="alert alert-error" dir="auto">{{ errorMessage }}</div>
+        <div *ngIf="successMessage" class="alert alert-success" dir="auto">{{ successMessage }}</div>
+
+        <button class="btn btn-primary" type="submit" [disabled]="saving || menuForm.invalid">
+          {{ saving ? 'Saving...' : (editingId === null ? 'Add menu item' : 'Save changes') }}
         </button>
 
-        <button
-          *ngIf="editingId !== null"
-          class="cancel-btn"
-          type="button"
-          (click)="resetForm()"
-        >
-          Cancel Editing
+        <button *ngIf="editingId !== null" class="btn btn-ghost" type="button" (click)="resetForm()">
+          Cancel editing
         </button>
       </form>
     </section>
 
-    <section class="panel items-panel">
-      <div class="panel-heading items-heading">
+    <section class="panel list-panel">
+      <div class="panel-head">
         <div>
-          <span class="section-label">YOUR RESTAURANT</span>
-          <h2>Menu Items</h2>
+          <h3>Menu items</h3>
+          <p>{{ filteredItems.length }} items</p>
         </div>
 
-        <span class="item-count">{{ filteredItems.length }} items</span>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M20 20l-3.5-3.5"/>
+          </svg>
+          <input type="search" name="search" [(ngModel)]="searchQuery" placeholder="Search items..." />
+        </label>
       </div>
 
-      <div class="search-box">
-        <span>⌕</span>
-        <input
-          type="search"
-          name="search"
-          [(ngModel)]="searchQuery"
-          placeholder="Search by item or category..."
-        />
+      <div *ngIf="loading" class="empty">Loading menu items...</div>
+
+      <div *ngIf="!loading && menuItems.length === 0" class="empty">
+        <strong>No menu items yet</strong>
+        <span>Add your first item using the form.</span>
       </div>
 
-      <div *ngIf="loading" class="empty-state">
-        Loading menu items...
+      <div *ngIf="!loading && menuItems.length > 0 && filteredItems.length === 0" class="empty">
+        <strong>No matching items</strong>
+        <span>Try a different search term.</span>
       </div>
 
-      <div *ngIf="!loading && menuItems.length === 0" class="empty-state">
-        No menu items found. Add your first item using the form.
-      </div>
-
-      <div
-        *ngIf="!loading && menuItems.length > 0 && filteredItems.length === 0"
-        class="empty-state"
-      >
-        No items match your search.
-      </div>
-
-      <div class="table-wrapper" *ngIf="!loading && filteredItems.length > 0">
+      <div class="table-wrap" *ngIf="!loading && filteredItems.length > 0">
         <table>
           <thead>
             <tr>
-              <th>ITEM</th>
-              <th>CATEGORY</th>
-              <th>PRICE</th>
-              <th>ACTIONS</th>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Actions</th>
             </tr>
           </thead>
-
           <tbody>
             <tr *ngFor="let item of filteredItems">
               <td>
                 <div class="item-name">
-                  <span class="item-avatar">{{ item.name.charAt(0) }}</span>
+                  <span class="avatar">{{ item.name.charAt(0) }}</span>
                   <div>
                     <strong>{{ item.name }}</strong>
                     <small>#{{ item.item_id }}</small>
                   </div>
                 </div>
               </td>
-
-              <td>
-                <span class="category-badge">{{ item.category }}</span>
-              </td>
-
-              <td class="price-cell">
-                {{ item.price_egp | number:'1.2-2' }} EGP
-              </td>
-
+              <td><span class="badge">{{ item.category }}</span></td>
+              <td class="price">{{ item.price_egp | number:'1.2-2' }} EGP</td>
               <td>
                 <div class="actions">
-                  <button
-                    type="button"
-                    class="edit-btn"
-                    (click)="editItem(item)"
-                    aria-label="Edit item"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    class="delete-btn"
-                    (click)="deleteItem(item)"
-                    aria-label="Delete item"
-                  >
-                    Delete
-                  </button>
+                  <button type="button" class="btn btn-soft btn-sm" (click)="editItem(item)">Edit</button>
+                  <button type="button" class="btn btn-danger-soft btn-sm" (click)="deleteItem(item)">Delete</button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <div class="table-footer">
-        <span>Waste Zero · Smart Food Management</span>
-        <span>{{ menuItems.length }} total items</span>
       </div>
     </section>
   </div>

@@ -1,12 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { Waste } from './waste';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { WasteService } from './waste';
 
-describe('Waste', () => {
-  let service: Waste;
+describe('WasteService', () => {
+  let service: WasteService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(Waste);
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
+    service = TestBed.inject(WasteService);
   });
 
   it('should be created', () => {

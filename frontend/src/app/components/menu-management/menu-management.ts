@@ -1,14 +1,14 @@
-
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WasteService, MenuItem } from '../../services/waste';
 
 @Component({
   selector: 'app-menu-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './menu-management.html',
   styleUrl: './menu-management.scss'
 })
@@ -28,7 +28,10 @@ export class MenuManagement implements OnInit {
   successMessage = '';
   searchQuery = '';
 
-  constructor(private wasteService: WasteService) {}
+  constructor(
+    private wasteService: WasteService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadMenu();
@@ -55,11 +58,13 @@ export class MenuManagement implements OnInit {
       next: items => {
         this.menuItems = items;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loading = false;
         this.errorMessage =
           'تعذر تحميل المنيو. تأكدي إن الـ Backend شغال.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -86,24 +91,28 @@ export class MenuManagement implements OnInit {
 
     this.saving = true;
 
-    const request = this.editingId === null
+    const wasAdding = this.editingId === null;
+
+    const request = wasAdding
       ? this.wasteService.addMenuItem(payload)
-      : this.wasteService.updateMenuItem(this.editingId, payload);
+      : this.wasteService.updateMenuItem(this.editingId as number, payload);
 
     request.subscribe({
       next: () => {
         this.saving = false;
-        this.successMessage = this.editingId === null
+        this.successMessage = wasAdding
           ? 'تمت إضافة الصنف بنجاح.'
           : 'تم تعديل الصنف بنجاح.';
 
         this.resetForm();
         this.loadMenu();
+        this.cdr.markForCheck();
       },
       error: (error: HttpErrorResponse) => {
         this.saving = false;
         this.errorMessage =
           error.error?.detail || 'حصل خطأ أثناء حفظ الصنف.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -143,10 +152,12 @@ export class MenuManagement implements OnInit {
         }
 
         this.loadMenu();
+        this.cdr.markForCheck();
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage =
           error.error?.detail || 'تعذر حذف الصنف.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -160,22 +171,23 @@ export class MenuManagement implements OnInit {
 
     this.editingId = null;
   }
-  getCategoriesCount(): number {
-  return new Set(
-    this.menuItems.map(item => item.category.trim().toLowerCase())
-  ).size;
-}
 
-getAveragePrice(): number {
-  if (this.menuItems.length === 0) {
-    return 0;
+  getCategoriesCount(): number {
+    return new Set(
+      this.menuItems.map(item => item.category.trim().toLowerCase())
+    ).size;
   }
 
-  const total = this.menuItems.reduce(
-    (sum, item) => sum + Number(item.price_egp),
-    0
-  );
+  getAveragePrice(): number {
+    if (this.menuItems.length === 0) {
+      return 0;
+    }
 
-  return total / this.menuItems.length;
-}
+    const total = this.menuItems.reduce(
+      (sum, item) => sum + Number(item.price_egp),
+      0
+    );
+
+    return total / this.menuItems.length;
+  }
 }

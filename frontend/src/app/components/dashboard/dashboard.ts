@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -54,7 +54,10 @@ export class DashboardComponent implements OnInit {
 
   errorMessage = '';
 
-  constructor(private wasteService: WasteService) {}
+  constructor(
+    private wasteService: WasteService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadMenu();
@@ -68,20 +71,18 @@ export class DashboardComponent implements OnInit {
     this.wasteService.getMenu().subscribe({
       next: (items) => {
         this.menuItems = items;
-
         this.menuCategories = [
           ...new Set(items.map(item => item.category))
         ];
-
         this.menuLoading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Menu loading error:', error);
-
         this.errorMessage =
           'تعذر تحميل المنيو. تأكدي أن الـ Backend يعمل.';
-
         this.menuLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -164,6 +165,7 @@ export class DashboardComponent implements OnInit {
       next: (result) => {
         this.predictionResult = result;
         this.loading = false;
+        this.cdr.markForCheck();
 
         this.loadPredictionHistory();
         this.loadAnalytics();
@@ -176,6 +178,7 @@ export class DashboardComponent implements OnInit {
         this.errorMessage =
           error.error?.detail ||
           'تعذر تنفيذ التوقع. تأكدي أن الـ Backend والموديل يعملان.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -218,10 +221,12 @@ export class DashboardComponent implements OnInit {
         });
 
         this.historyLoading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('History loading error:', error);
         this.historyLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -233,10 +238,12 @@ export class DashboardComponent implements OnInit {
       next: (summary) => {
         this.analyticsSummary = summary;
         this.analyticsLoading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Analytics loading error:', error);
         this.analyticsLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }

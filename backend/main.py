@@ -1,4 +1,3 @@
-
 import csv
 import sqlite3
 from pathlib import Path
@@ -120,6 +119,8 @@ def ensure_history_table():
                 prepared_quantity INTEGER,
                 sold_quantity INTEGER,
                 predicted_waste INTEGER DEFAULT 0,
+                potential_excess_quantity INTEGER DEFAULT 0,
+                potential_shortage_quantity INTEGER DEFAULT 0,
                 loss_cost REAL DEFAULT 0,
                 recommendation TEXT,
                 created_at TEXT NOT NULL DEFAULT ''
@@ -141,6 +142,8 @@ def ensure_history_table():
             "prepared_quantity": "INTEGER",
             "sold_quantity": "INTEGER",
             "predicted_waste": "INTEGER DEFAULT 0",
+            "potential_excess_quantity": "INTEGER DEFAULT 0",
+            "potential_shortage_quantity": "INTEGER DEFAULT 0",
             "loss_cost": "REAL DEFAULT 0",
             "recommendation": "TEXT",
             "created_at": "TEXT NOT NULL DEFAULT ''"
@@ -154,7 +157,6 @@ def ensure_history_table():
                 )
 
         conn.commit()
-
 
 
 def save_prediction_history(
@@ -460,7 +462,6 @@ def delete_menu_item(item_id: int):
 # 9. Machine Learning demand prediction
 # ==========================================
 
-
 @app.post("/api/predict-demand")
 def predict_demand(data: DemandPredictionRequest):
     import traceback
@@ -585,18 +586,17 @@ def predict_demand(data: DemandPredictionRequest):
 
         # 9. Save the prediction to the database
         try:
-            
-                    save_prediction_history(
-                        prediction_type="demand",
-                        item_id=int(item["item_id"]),
-                        item_name=str(item["name"]),
-                        predicted_demand=predicted_demand,
-                        prepared_quantity=prepared_quantity,
-                        predicted_waste=0,
-                        potential_excess_quantity=potential_excess,
-                        potential_shortage_quantity=shortage,
-                        recommendation=recommendation
-                    ) 
+            save_prediction_history(
+                prediction_type="demand",
+                item_id=int(item["item_id"]),
+                item_name=str(item["name"]),
+                predicted_demand=predicted_demand,
+                prepared_quantity=prepared_quantity,
+                predicted_waste=0,
+                potential_excess_quantity=potential_excess,
+                potential_shortage_quantity=shortage,
+                recommendation=recommendation
+            )
         except Exception as exc:
             traceback.print_exc()
 
@@ -634,8 +634,9 @@ def predict_demand(data: DemandPredictionRequest):
             detail=f"Demand prediction failed: {type(exc).__name__}: {exc}"
         ) from exc
 
+
 # ==========================================
-# 11. Prediction history endpoint
+# 10. Prediction history endpoint
 # ==========================================
 
 @app.get("/api/prediction-history")
@@ -658,8 +659,9 @@ def get_prediction_history(
 
 
 # ==========================================
-# 12. Analytics summary endpoint
+# 11. Analytics summary endpoint
 # ==========================================
+
 @app.get("/api/analytics/summary")
 def get_analytics_summary():
     try:
@@ -672,15 +674,16 @@ def get_analytics_summary():
             row = conn.execute("""
                 SELECT
                     COUNT(*) AS total_predictions,
-COALESCE(
-    SUM(
-        CASE
-            WHEN prediction_type = 'waste' THEN predicted_waste
-            ELSE 0
-        END
-    ),
-    0
-) AS total_waste,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN prediction_type = 'waste'
+                                THEN predicted_waste
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS total_waste,
                     COALESCE(SUM(loss_cost), 0) AS total_loss_cost,
                     COALESCE(
                         SUM(
